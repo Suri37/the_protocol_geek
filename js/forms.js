@@ -13,6 +13,20 @@ function setFormStatus(form, message, isError = false) {
   status.style.color = isError ? '#b42318' : '#0b4ea2';
 }
 
+async function sendSubmissionNotification(supabaseClient, table, payload) {
+  try {
+    await supabaseClient.functions.invoke('notify-new-submission', {
+      body: {
+        table,
+        payload,
+        submittedAt: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.warn('Notification email was not sent, but the form submission was saved.', error);
+  }
+}
+
 async function submitToSupabase(event) {
   event.preventDefault();
 
@@ -38,6 +52,8 @@ async function submitToSupabase(event) {
     const { error } = await supabaseClient.from(table).insert(payload);
 
     if (error) throw error;
+
+    await sendSubmissionNotification(supabaseClient, table, payload);
 
     form.reset();
     setFormStatus(form, 'Thank you. Your details have been submitted successfully.');

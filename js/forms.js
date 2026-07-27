@@ -18,7 +18,7 @@ function setFormStatus(form, message, isError = false) {
   status.style.color = isError ? '#b42318' : '#0b4ea2';
 }
 
-async function fetchWithTimeout(url, options, timeoutMs = 20000) {
+async function fetchWithTimeout(url, options, timeoutMs = 25000) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -29,64 +29,40 @@ async function fetchWithTimeout(url, options, timeoutMs = 20000) {
   }
 }
 
-async function parseErrorResponse(response, fallbackMessage) {
-  let details = '';
+async function parseResponse(response) {
+  const text = await response.text();
+  if (!text) return {};
 
   try {
-    const body = await response.json();
-    details = body.message || body.error || body.msg || body.hint || '';
+    return JSON.parse(text);
   } catch (_) {
-    try {
-      details = await response.text();
-    } catch (_) {
-      details = '';
-    }
-  }
-
-  return new Error(details || fallbackMessage);
-}
-
-async function saveSubmission(table, payload) {
-  const { url, anonKey } = getSupabaseConfig();
-  const endpoint = `${url}/rest/v1/${encodeURIComponent(table)}`;
-
-  const response = await fetchWithTimeout(endpoint, {
-    method: 'POST',
-    headers: {
-      apikey: anonKey,
-      Authorization: `Bearer ${anonKey}`,
-      'Content-Type': 'application/json',
-      Prefer: 'return=minimal'
-    },
-    body: JSON.stringify(payload)
-  });
-
-  if (!response.ok) {
-    throw await parseErrorResponse(response, 'We could not save your registration. Please try again.');
+    return { error: text };
   }
 }
 
-async function sendSubmissionNotification(table, payload) {
+async function submitRegistration(table, payload) {
   const { url, anonKey } = getSupabaseConfig();
-  const endpoint = `${url}/functions/v1/notify-new-submission`;
 
-  const response = await fetchWithTimeout(endpoint, {
+  const response = await fetchWithTimeout('/api/submit-registration', {
     method: 'POST',
     headers: {
-      apikey: anonKey,
-      Authorization: `Bearer ${anonKey}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
       table,
       payload,
-      submittedAt: new Date().toISOString()
+      supabaseUrl: url,
+      anonKey
     })
   });
 
+  const body = await parseResponse(response);
+
   if (!response.ok) {
-    throw await parseErrorResponse(response, 'The email notification could not be sent.');
+    throw new Error(body.error || body.message || 'We could not save your registration. Please try again.');
   }
+
+  return body;
 }
 
 async function submitToSupabase(event) {
@@ -110,22 +86,20 @@ async function submitToSupabase(event) {
     submitButton.textContent = 'Submitting...';
     setFormStatus(form, '');
 
-    await saveSubmission(table, payload);
-
-    try {
-      await sendSubmissionNotification(table, payload);
-    } catch (notificationError) {
-      console.error('The registration was saved, but the notification email failed.', notificationError);
-    }
+    const result = await submitRegistration(table, payload);
 
     form.reset();
+
+    if (result.notificationSent === false) {
+      console.warn('Registration saved, but notification email was not sent:', result.notificationError);
+    }
+
     setFormStatus(form, 'Thank you. Your details have been submitted successfully.');
   } catch (error) {
     console.error('Registration submission failed:', error);
 
-    const isNetworkFailure = error instanceof TypeError || error.name === 'AbortError';
-    const message = isNetworkFailure
-      ? 'The connection was interrupted. Please check your internet connection and submit again.'
+    const message = error.name === 'AbortError'
+      ? 'The registration service took too long to respond. Please try again.'
       : error.message || 'Something went wrong. Please try again.';
 
     setFormStatus(form, message, true);

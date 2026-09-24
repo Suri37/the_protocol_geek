@@ -2,7 +2,7 @@ function getSupabaseConfig() {
   const config = window.TPG_SUPABASE_CONFIG || {};
 
   if (!config.url || !config.anonKey || config.url.includes('PASTE_') || config.anonKey.includes('PASTE_')) {
-    throw new Error('The registration service is not configured. Please contact hello@theprotocolgeek.com.');
+    throw new Error('The registration service is not configured. Please contact contact@theprotocolgeek.com.');
   }
 
   return {

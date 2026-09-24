@@ -8,7 +8,7 @@ When someone submits either form:
 
 1. The record is saved in Supabase.
 2. The website calls the Edge Function.
-3. The Edge Function sends an email to `hello@theprotocolgeek.com`.
+3. The Edge Function sends an email to `contact@theprotocolgeek.com`.
 
 ## One-time setup required
 
@@ -18,7 +18,7 @@ Use Resend or another transactional email provider. This function is currently w
 
 ### 2. Verify your sending domain
 
-Verify `theprotocolgeek.com` in Resend before sending from `hello@theprotocolgeek.com`.
+Verify `theprotocolgeek.com` in Resend before sending from `contact@theprotocolgeek.com`.
 
 ### 3. Add Supabase Edge Function secrets
 
@@ -30,8 +30,8 @@ Add:
 
 ```bash
 RESEND_API_KEY=your_resend_api_key
-ADMIN_EMAIL=hello@theprotocolgeek.com
-FROM_EMAIL=The Protocol Geek <hello@theprotocolgeek.com>
+ADMIN_EMAIL=contact@theprotocolgeek.com
+FROM_EMAIL=The Protocol Geek <contact@theprotocolgeek.com>
 ```
 
 ### 4. Deploy the Edge Function

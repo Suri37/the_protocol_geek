@@ -33,8 +33,8 @@ Deno.serve(async (req) => {
 
   try {
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
-    const adminEmail = Deno.env.get('ADMIN_EMAIL') || 'hello@theprotocolgeek.com';
-    const fromEmail = Deno.env.get('FROM_EMAIL') || 'The Protocol Geek <hello@theprotocolgeek.com>';
+    const adminEmail = Deno.env.get('ADMIN_EMAIL') || 'contact@theprotocolgeek.com';
+    const fromEmail = Deno.env.get('FROM_EMAIL') || 'The Protocol Geek <contact@theprotocolgeek.com>';
 
     if (!resendApiKey) {
       throw new Error('Missing RESEND_API_KEY secret.');
